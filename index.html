@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ลงทะเบียน / Registration</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #ffffff;
+      --frame:    #e8a800;
+      --amber:    #e8a800;
+      --amber-dk: #c88a00;
+      --orange:   #000000;
+      --card:     #ffffff;
+      --input-bg: #f2f2f2;
+      --text:     #000000;
+      --muted:    #555555;
+      --border:   #e0e0e0;
+      --green:    #3a9e6a;
+      --red:      #e05050;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Noto Sans Thai', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      border: 10px solid var(--frame);
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; min-height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ── HEADER ── */
+    header {
+      background: white;
+      border-bottom: 3px solid var(--amber);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .logo { display: flex; flex-direction: column; line-height: 1; }
+    .logo-top  { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; }
+    .logo-main { font-size: 1.5rem; font-weight: 900; font-style: italic; color: var(--amber); }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+
+    .pill-btn {
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 2px solid var(--amber);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .pill-btn:hover, .pill-btn.active { background: var(--amber); color: white; }
+    .pill-btn:hover {
+      transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 6px 18px rgba(232,168,0,0.40);
+    }
+    .pill-btn:active { transform: scale(0.96); }
+
+    /* ── LANGUAGE SWITCHER ── */
+    .lang-switch {
+      display: flex;
+      gap: 3px;
+      background: var(--input-bg);
+      border-radius: 999px;
+      padding: 3px;
+    }
+    .lang-btn {
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.75rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      letter-spacing: 0.05em;
+      transition: background 0.15s, color 0.15s, transform 0.15s;
+    }
+    .lang-btn.active { background: var(--amber); color: #000; }
+    .lang-btn:hover:not(.active) {
+      color: var(--text);
+      transform: scale(1.10);
+    }
+    .lang-btn:active { transform: scale(0.92); }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 20px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .status-bar.connected    { background: #f0faf4; border-bottom: 1.5px solid #b8e8cc; color: #1a6e42; }
+    .status-bar.disconnected { background: #fffbe8; border-bottom: 1.5px solid var(--amber); color: #000; }
+    .status-bar.error        { background: #fff2f2; border-bottom: 1.5px solid #f8c8c8; color: #a03030; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .connected .status-dot    { background: #3a9e6a; }
+    .disconnected .status-dot { background: #d4a800; }
+    .error .status-dot        { background: #e05050; }
+
+    /* ── HERO ── */
+    .hero {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px; padding: 40px 20px; text-align: center;
+      position: relative;
+    }
+    /* ── FLOAT KEYFRAME ── */
+    @keyframes iconFloat {
+      0%, 100% { transform: translateY(0) scale(1);   filter: drop-shadow(0 0 0px rgba(232,168,0,0)); }
+      50%       { transform: translateY(-8px) scale(1.08); filter: drop-shadow(0 8px 18px rgba(232,168,0,0.55)); }
+    }
+
+    .hero-emoji {
+      font-size: 4.5rem; line-height: 1;
+      animation: iconFloat 3.2s ease-in-out infinite;
+      display: inline-block;
+      cursor: default;
+    }
+    .hero-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; }
+    .hero-big   { font-size: 3rem; font-weight: 900; font-style: italic; color: var(--amber); line-height: 1; }
+    .hero-sub   { font-size: 0.85rem; color: var(--muted); margin-top: -8px; }
+
+    .btn-start {
+      background: var(--amber); color: #000;
+      border: none; border-radius: 999px;
+      padding: 16px 60px; font-size: 0.95rem;
+      font-weight: 800; letter-spacing: 0.12em;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 6px 24px rgba(232,168,0,0.35);
+      transition: background 0.15s, transform 0.18s, box-shadow 0.18s;
+      margin-top: 8px;
+    }
+    .btn-start:hover  {
+      background: var(--amber-dk);
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 14px 36px rgba(232,168,0,0.50);
+    }
+    .btn-start:active { transform: scale(0.97); }
+
+    /* ── FORM SCREEN ── */
+    .form-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 32px 16px 48px; overflow-y: auto;
+    }
+
+    .card {
+      background: var(--card); border-radius: 20px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+      padding: 30px 28px 28px; width: 100%; max-width: 500px;
+    }
+
+    .card-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 1rem; font-weight: 800;
+      letter-spacing: 0.08em; margin-bottom: 22px;
+    }
+
+    .section-label {
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.12em; color: var(--orange);
+      text-transform: uppercase; padding-bottom: 8px;
+      border-bottom: 1.5px solid var(--border); margin-bottom: 18px;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field label {
+      display: block; font-size: 0.78rem;
+      font-weight: 600; color: var(--muted); margin-bottom: 6px;
+    }
+
+    .field label .req { color: var(--red); margin-left: 2px; }
+
+    .field input {
+      width: 100%; background: var(--input-bg);
+      border: none; border-radius: 10px;
+      padding: 13px 14px; font-size: 1rem;
+      font-family: inherit; color: var(--text); outline: none;
+      transition: box-shadow 0.15s, background 0.15s;
+    }
+    .field input:focus {
+      background: #ebebeb;
+      box-shadow: 0 0 0 3px rgba(232,168,0,0.3);
+    }
+    .field input::placeholder { color: #aaa; font-size: 0.92rem; }
+
+    .btn-submit {
+      width: 100%; margin-top: 24px;
+      background: var(--amber); color: var(--text);
+      border: none; border-radius: 999px; padding: 15px;
+      font-size: 0.95rem; font-weight: 800;
+      letter-spacing: 0.1em; cursor: pointer; font-family: inherit;
+      box-shadow: 0 4px 18px rgba(232,168,0,0.3);
+      transition: background 0.15s, transform 0.18s, box-shadow 0.18s;
+    }
+    .btn-submit:hover  {
+      background: var(--amber-dk);
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 28px rgba(232,168,0,0.50);
+    }
+    .btn-submit:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(232,168,0,0.25); }
+    .btn-submit:disabled { background: #d0c8b8; box-shadow: none; cursor: default; transform: none; }
+
+    /* ── SUCCESS OVERLAY ── */
+    .success-overlay {
+      display: none; position: fixed; inset: 0;
+      background: #ffffff; z-index: 500;
+      flex-direction: column; align-items: center;
+      justify-content: center; text-align: center;
+      padding: 40px 24px;
+    }
+    .success-overlay.show { display: flex; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .success-check {
+      font-size: 5rem; line-height: 1;
+      animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .success-title {
+      font-size: 2.2rem; font-weight: 900; font-style: italic;
+      color: var(--amber); margin-top: 20px; line-height: 1.1;
+    }
+    .success-sub  { font-size: 1rem; color: var(--muted); margin-top: 6px; }
+
+    .success-name {
+      margin-top: 28px; background: white;
+      border-radius: 16px; padding: 18px 32px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08); min-width: 260px;
+    }
+    .success-name-th { font-size: 1.3rem; font-weight: 700; }
+    .success-name-en { font-size: 0.95rem; color: var(--muted); margin-top: 4px; }
+
+    .success-sheet-badge {
+      margin-top: 14px; display: inline-flex; align-items: center;
+      gap: 6px; background: #edfaf3; border-radius: 999px;
+      padding: 5px 14px; font-size: 0.78rem;
+      font-weight: 700; color: #1a6e42;
+    }
+
+    .success-bar-wrap {
+      margin-top: 30px; width: 200px; height: 5px;
+      background: #e0dbd2; border-radius: 999px; overflow: hidden;
+    }
+    .success-bar {
+      height: 100%; background: var(--amber);
+      border-radius: 999px; width: 0%; transition: width linear;
+    }
+
+    .success-next {
+      margin-top: 20px; background: var(--amber); color: var(--text);
+      border: none; border-radius: 999px; padding: 13px 40px;
+      font-size: 0.9rem; font-weight: 800; letter-spacing: 0.1em;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 4px 16px rgba(232,168,0,0.3);
+      transition: background 0.15s, transform 0.18s, box-shadow 0.18s;
+    }
+    .success-next:hover {
+      background: var(--amber-dk);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 10px 28px rgba(232,168,0,0.48);
+    }
+    .success-next:active { transform: scale(0.97); }
+
+    /* ── LIST SCREEN ── */
+    .list-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 32px 16px 48px; overflow-y: auto;
+    }
+    .list-card {
+      background: var(--card); border-radius: 20px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+      padding: 26px 28px; width: 100%; max-width: 600px;
+    }
+    .list-top {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 18px;
+    }
+    .list-title {
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.12em; color: var(--orange); text-transform: uppercase;
+    }
+    .count-badge {
+      background: var(--amber); color: #000;
+      border-radius: 999px; padding: 3px 12px;
+      font-size: 0.8rem; font-weight: 800;
+    }
+    .empty {
+      text-align: center; padding: 28px 0 8px;
+      color: var(--muted); font-size: 0.9rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      text-align: left; font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.1em; color: var(--muted);
+      text-transform: uppercase; padding: 0 6px 10px;
+    }
+    tbody tr { border-top: 1px solid #ebebeb; }
+    tbody tr:hover { background: #f8f8f8; }
+    td { padding: 10px 6px; vertical-align: middle; }
+    td.num { color: var(--muted); font-weight: 700; font-size: 0.8rem; width: 32px; }
+    td.status-cell { font-size: 0.75rem; width: 36px; text-align: center; }
+    .btn-del {
+      background: none; border: none; color: #d0a090;
+      cursor: pointer; font-size: 1rem; padding: 3px 6px;
+      border-radius: 6px; transition: color 0.15s;
+    }
+    .btn-del:hover { color: var(--red); background: #fff0f0; }
+    .action-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-action {
+      flex: 1; padding: 10px 8px;
+      border: 1.5px solid var(--border); background: white;
+      border-radius: 10px; font-size: 0.82rem; font-weight: 700;
+      color: #5a5550; cursor: pointer; font-family: inherit;
+      transition: background 0.12s, transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-action:hover {
+      background: #f5f2ec;
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+    }
+    .btn-action:active { transform: scale(0.97); }
+    .btn-action.danger { color: var(--red); border-color: #f8d8d0; }
+    .btn-action.danger:hover { background: #fff5f4; box-shadow: 0 6px 16px rgba(224,80,80,0.15); }
+
+    /* ══ MONITOR SCREEN — TV (1920×1080) ══ */
+    #screenMonitor {
+      background: #ffffff;
+      width: 1920px;
+      min-height: 1080px;
+      color: #000000;
+      transform-origin: top left;
+    }
+    #screenMonitor.active { display: flex; flex-direction: column; }
+
+    .monitor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 64px;
+      background: var(--amber);
+      flex-shrink: 0;
+    }
+
+    .monitor-logo { display: flex; flex-direction: column; line-height: 1; }
+    .monitor-logo-top  { font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; color: rgba(0,0,0,0.5); }
+    .monitor-logo-main { font-size: 2.6rem; font-weight: 900; font-style: italic; color: #000; }
+
+    .monitor-live {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0,0,0,0.12);
+      border-radius: 999px;
+      padding: 12px 32px;
+    }
+    .live-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #e82020;
+      animation: livePulse 1.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(1.35); }
+    }
+    .live-label { font-size: 1.3rem; font-weight: 800; letter-spacing: 0.2em; color: #000; }
+
+    .monitor-count-wrap { text-align: right; }
+    .monitor-count-num  { font-size: 4rem; font-weight: 900; color: #000; line-height: 1; }
+    .monitor-count-label { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.12em; color: rgba(0,0,0,0.5); text-transform: uppercase; margin-top: 2px; }
+
+    .monitor-exit {
+      background: rgba(0,0,0,0.12);
+      border: none;
+      color: rgba(0,0,0,0.7);
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.06em;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .monitor-exit:hover { background: rgba(0,0,0,0.22); color: #000; }
+
+    .monitor-body {
+      flex: 1;
+      padding: 52px 72px 60px;
+      overflow-y: auto;
+      background:
+        radial-gradient(ellipse at 0% 0%,   rgba(255,220,50,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 100% 100%, rgba(255,200,0,0.14) 0%, transparent 55%),
+        #ffffff;
+    }
+
+    .monitor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .monitor-card {
+      border-radius: 24px;
+      padding: 30px 32px 26px;
+      border: none;
+      box-shadow: 0 8px 28px rgba(200,150,0,0.18), 0 2px 8px rgba(0,0,0,0.06);
+      animation: cardIn 0.55s cubic-bezier(0.34,1.45,0.64,1) both;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .monitor-card::after {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      pointer-events: none;
+    }
+    .monitor-card:nth-child(4n+1) { background: linear-gradient(145deg, #fff9d6 0%, #ffd740 100%); transform: rotate(-1.1deg); }
+    .monitor-card:nth-child(4n+2) { background: linear-gradient(145deg, #fffde8 0%, #ffe566 100%); transform: rotate(0.7deg); }
+    .monitor-card:nth-child(4n+3) { background: linear-gradient(145deg, #fff3b0 0%, #ffc400 100%); transform: rotate(-0.5deg); }
+    .monitor-card:nth-child(4n)   { background: linear-gradient(145deg, #fffbcc 0%, #ffda00 100%); transform: rotate(1.2deg); }
+    .monitor-card:hover {
+      transform: rotate(0deg) translateY(-4px) !important;
+      box-shadow: 0 16px 40px rgba(200,150,0,0.28), 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .monitor-card.is-new {
+      box-shadow: 0 0 0 3px #fff, 0 0 0 5px #e8a800, 0 12px 36px rgba(232,168,0,0.35);
+      animation: cardInNew 0.6s cubic-bezier(0.34,1.5,0.64,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: scale(0.7) translateY(20px) rotate(0deg); }
+      to   { opacity: 1; }
+    }
+    @keyframes cardInNew {
+      0%   { opacity: 0; transform: scale(0.6) translateY(24px); }
+      60%  { transform: scale(1.04); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .card-avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 900;
+      color: rgba(0,0,0,0.55);
+      margin-bottom: 14px;
+      flex-shrink: 0;
+    }
+    .card-num {
+      position: absolute; top: 18px; right: 20px;
+      font-size: 0.78rem; font-weight: 800;
+      color: rgba(0,0,0,0.3); letter-spacing: 0.06em;
+    }
+    .card-name-th { font-size: 1.6rem; font-weight: 800; color: #000; line-height: 1.2; }
+    .card-name-en { font-size: 1rem; color: rgba(0,0,0,0.5); margin-top: 4px; font-weight: 500; }
+
+    .monitor-empty {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px; text-align: center; padding: 160px 20px;
+    }
+    .monitor-empty-icon { font-size: 6rem; opacity: 0.2; }
+    .monitor-empty-text { font-size: 1.6rem; color: #bbb; font-weight: 600; }
+
+    .monitor-btn {
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 2px solid var(--amber);
+      font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; background: transparent;
+      color: var(--amber); font-family: inherit;
+      transition: background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .monitor-btn:hover {
+      background: var(--amber); color: #000;
+      transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 6px 18px rgba(232,168,0,0.40);
+    }
+    .monitor-btn:active { transform: scale(0.96); }
+
+    /* ══ LANGUAGE SELECTION SCREEN ══ */
+    #screenLangPick {
+      background: #fff;
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    #screenLangPick.active { display: flex; }
+
+    /* Decorative radial blobs */
+    #screenLangPick::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 20%, rgba(232,168,0,0.13) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 80%, rgba(232,168,0,0.10) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .langpick-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .langpick-logo-top  {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.18em; color: var(--muted);
+      text-transform: uppercase;
+    }
+    .langpick-logo-main {
+      font-size: 2.6rem; font-weight: 900;
+      font-style: italic; color: var(--amber);
+      line-height: 1;
+    }
+
+    .langpick-prompt {
+      font-size: 0.85rem; font-weight: 600;
+      color: var(--muted); letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+      position: relative; z-index: 1;
+    }
+
+    .langpick-cards {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative; z-index: 1;
+    }
+
+    .langpick-card {
+      width: 220px;
+      border-radius: 28px;
+      border: 3px solid transparent;
+      background: #fff;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+      padding: 40px 24px 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition:
+        transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+        box-shadow 0.22s ease,
+        border-color 0.18s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .langpick-card:hover {
+      transform: translateY(-10px) scale(1.04);
+      box-shadow: 0 20px 52px rgba(232,168,0,0.30), 0 4px 12px rgba(0,0,0,0.08);
+      border-color: var(--amber);
+    }
+    .langpick-card:active {
+      transform: scale(0.97);
+    }
+
+    .langpick-flag {
+      width: 80px;
+      height: 54px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+      flex-shrink: 0;
+    }
+    .langpick-flag img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .langpick-name {
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .langpick-native {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .langpick-badge {
+      margin-top: 4px;
+      background: var(--input-bg);
+      border-radius: 999px;
+      padding: 4px 16px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: #888;
+      text-transform: uppercase;
+      transition: background 0.18s, color 0.18s;
+    }
+    .langpick-card:hover .langpick-badge {
+      background: var(--amber);
+      color: #000;
+    }
+
+    @media print {
+      body::before { display: none; }
+      header, .status-bar, .btn-submit, .action-row, .btn-del,
+      #screenLanding, #screenLangPick { display: none !important; }
+      .list-card { box-shadow: none; max-width: 100%; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ SCREEN 0: LANGUAGE SELECTION ══ -->
+<div class="screen active" id="screenLangPick">
+  <div class="langpick-brand">
+    <span class="langpick-logo-top">Welcome &nbsp;·&nbsp; ยินดีต้อนรับ</span>
+    <span class="langpick-logo-main">Register</span>
+  </div>
+
+  <div class="langpick-prompt">Select your language / เลือกภาษา</div>
+
+  <div class="langpick-cards">
+
+    <!-- Thai -->
+    <button class="langpick-card" onclick="pickLang('th')">
+      <div class="langpick-flag">
+        <img src="https://flagcdn.com/w160/th.png" alt="Thai flag"/>
+      </div>
+      <div class="langpick-name">ภาษาไทย</div>
+      <div class="langpick-native">Thai</div>
+      <div class="langpick-badge">เลือก</div>
+    </button>
+
+    <!-- English -->
+    <button class="langpick-card" onclick="pickLang('en')">
+      <div class="langpick-flag">
+        <img src="https://flagcdn.com/w160/gb.png" alt="UK flag"/>
+      </div>
+      <div class="langpick-name">English</div>
+      <div class="langpick-native">ภาษาอังกฤษ</div>
+      <div class="langpick-badge">Select</div>
+    </button>
+
+  </div>
+</div>
+
+<!-- ══ SCREEN 1: LANDING ══ -->
+<div class="screen" id="screenLanding">
+  <div class="hero">
+    <div class="hero-emoji">⛳</div>
+    <div class="hero-title" id="heroWelcome">ยินดีต้อนรับสู่</div>
+    <div class="hero-big"   id="heroTitle">ลงทะเบียน</div>
+    <div class="hero-sub"   id="heroSub">Registration</div>
+    <button class="btn-start" id="btnStart" onclick="onGetStarted()">เริ่มลงทะเบียน →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: FORM ══ -->
+<div class="screen" id="screenForm">
+  <header>
+    <div class="logo">
+      <span class="logo-top"  id="formLogoTop">ยินดีต้อนรับ</span>
+      <span class="logo-main" id="formLogoMain">ลงทะเบียน</span>
+    </div>
+    <div class="header-right">
+      <div class="lang-switch">
+        <button class="lang-btn active" id="formLangTh" onclick="setLang('th')">TH</button>
+        <button class="lang-btn"        id="formLangEn" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="monitor-btn" onclick="openMonitor()">📺 Monitor</button>
+      <button class="pill-btn" id="btnViewList" onclick="showScreen('screenList')">
+        📋 <span id="btnListLabel">รายชื่อ</span> <span id="headerCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sheet status -->
+  <div class="status-bar connected" id="statusBar">
+    <span class="status-dot"></span>
+    <span id="statusText">📊 เชื่อมต่อ Google Sheet แล้ว</span>
+  </div>
+
+  <div class="form-body">
+    <div class="card">
+      <div class="card-title" id="formCardTitle">✏️ &nbsp;กรอกข้อมูล</div>
+      <div class="section-label" id="sectionName">ชื่อ / Name</div>
+
+      <div class="field">
+        <label for="nameEn" id="labelEn">Full Name (English) <span class="req">*</span></label>
+        <input type="text" id="nameEn" placeholder="e.g. Somchai Jaidee" autocomplete="off"/>
+      </div>
+
+      <div class="field">
+        <label for="nameTh" id="labelTh">ชื่อ-นามสกุล (ภาษาไทย) <span class="req">*</span></label>
+        <input type="text" id="nameTh" placeholder="เช่น สมชาย ใจดี" autocomplete="off"/>
+      </div>
+
+      <button class="btn-submit" id="btnRegister" onclick="register()">ลงทะเบียน →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUCCESS OVERLAY ══ -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-check">🎉</div>
+  <div class="success-title" id="successTitle">ลงทะเบียนสำเร็จ!</div>
+  <div class="success-sub"   id="successSub">You're all set!</div>
+  <div class="success-name">
+    <div class="success-name-th" id="successNameTh"></div>
+    <div class="success-name-en" id="successNameEn"></div>
+  </div>
+  <div id="sheetBadge" class="success-sheet-badge" style="display:none;">
+    📊 <span id="sheetBadgeText">บันทึกใน Google Sheet แล้ว</span>
+  </div>
+  <div class="success-bar-wrap">
+    <div class="success-bar" id="successBar"></div>
+  </div>
+  <button class="success-next" id="btnNext" onclick="dismissSuccess()">คนต่อไป →</button>
+</div>
+
+<!-- ══ SCREEN 3: LIST ══ -->
+<div class="screen" id="screenList">
+  <header>
+    <div class="logo">
+      <span class="logo-top"  id="listLogoTop">ยินดีต้อนรับ</span>
+      <span class="logo-main" id="listLogoMain">ลงทะเบียน</span>
+    </div>
+    <div class="header-right">
+      <div class="lang-switch">
+        <button class="lang-btn active" id="listLangTh" onclick="setLang('th')">TH</button>
+        <button class="lang-btn"        id="listLangEn" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="pill-btn active" id="btnBackForm" onclick="showScreen('screenForm')">✏️ กรอกข้อมูล</button>
+    </div>
+  </header>
+
+  <div class="list-body">
+    <div class="list-card">
+      <div class="list-top">
+        <div class="list-title" id="listTitle">📋 &nbsp;รายชื่อผู้ลงทะเบียนทั้งหมด</div>
+        <span class="count-badge" id="listCount">0</span>
+      </div>
+      <div class="empty" id="listEmpty">
+        <span id="listEmptyMain">ยังไม่มีผู้ลงทะเบียน</span><br/>
+        <small id="listEmptySub">No registrants yet.</small>
+      </div>
+      <table id="listTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th id="thTh">ชื่อ (ไทย)</th>
+            <th id="thEn">Name (EN)</th>
+            <th style="text-align:center;" id="thSheet">Sheet</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+      <div class="action-row" id="listActions" style="display:none;">
+        <button class="btn-action" id="btnExport" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn-action" id="btnRetry"  onclick="retryFailed()">🔄 Retry Failed</button>
+        <button class="btn-action" id="btnPrint"  onclick="window.print()">🖨 Print</button>
+        <button class="btn-action danger" id="btnClear" onclick="clearAll()">🗑 Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: LIVE MONITOR ══ -->
+<div class="screen" id="screenMonitor">
+  <div class="monitor-header">
+    <div class="monitor-logo">
+      <span class="monitor-logo-top"  id="monitorLogoTop">ยินดีต้อนรับ</span>
+      <span class="monitor-logo-main" id="monitorLogoMain">ลงทะเบียน</span>
+    </div>
+    <div class="monitor-live">
+      <span class="live-dot"></span>
+      <span class="live-label">LIVE</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="monitor-count-wrap">
+        <div class="monitor-count-num" id="monitorCount">0</div>
+        <div class="monitor-count-label" id="monitorCountLabel">ผู้ลงทะเบียน</div>
+      </div>
+      <button class="monitor-exit" onclick="closeMonitor()">✕ EXIT</button>
+    </div>
+  </div>
+
+  <div class="monitor-body" id="monitorBody">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<script>
+  /* ═══ GOOGLE SCRIPT URL (hard-coded) ═══ */
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbz9WNYy5Pfq0O36ZB1q3cmP5eJSw5mxrG8qzntzXzvBf9KHiNajpErA7oh5FIaOo8d0/exec';
+
+  /* ═══ STATE ═══ */
+  let registrants = JSON.parse(localStorage.getItem('reg_data') || '[]');
+  let sheetUrl    = SHEET_URL;
+  let autoTimer   = null;
+  const AUTO_MS   = 4000;
+
+  /* ═══ TRANSLATIONS ═══ */
+  const T = {
+    th: {
+      heroWelcome:       'ยินดีต้อนรับสู่',
+      heroTitle:         'ลงทะเบียน',
+      heroSub:           'Registration',
+      btnStart:          'เริ่มลงทะเบียน →',
+      logoTop:           'ยินดีต้อนรับ',
+      logoMain:          'ลงทะเบียน',
+      formCardTitle:     '✏️  กรอกข้อมูล',
+      sectionName:       'ชื่อ / Name',
+      labelEn:           'Full Name (English)',
+      placeholderEn:     'e.g. Somchai Jaidee',
+      labelTh:           'ชื่อ-นามสกุล (ภาษาไทย)',
+      placeholderTh:     'เช่น สมชาย ใจดี',
+      btnRegister:       'ลงทะเบียน →',
+      btnListLabel:      'รายชื่อ',
+      successTitle:      'ลงทะเบียนสำเร็จ!',
+      successSub:        "You're all set!",
+      sheetBadgeText:    'บันทึกใน Google Sheet แล้ว',
+      btnNext:           'คนต่อไป →',
+      listTitle:         '📋  รายชื่อผู้ลงทะเบียนทั้งหมด',
+      listEmptyMain:     'ยังไม่มีผู้ลงทะเบียน',
+      listEmptySub:      'No registrants yet.',
+      thTh:              'ชื่อ (ไทย)',
+      thEn:              'Name (EN)',
+      thSheet:           'Sheet',
+      btnExport:         '⬇ Export CSV',
+      btnRetry:          '🔄 Retry Failed',
+      btnPrint:          '🖨 Print',
+      btnClear:          '🗑 ลบทั้งหมด',
+      btnBackForm:       '✏️ กรอกข้อมูล',
+      statusConnected:   '📊 เชื่อมต่อ Google Sheet แล้ว',
+      monitorCountLabel: 'ผู้ลงทะเบียน',
+      monitorWaiting:    'รอผู้ลงทะเบียน…',
+      monitorWaitingSub: 'Waiting for registrations',
+      alertNoName:       'กรุณากรอกชื่อ / Please enter a name.',
+      alertRemove:       'ลบรายชื่อนี้? / Remove this entry?',
+      alertClearAll:     'ลบรายชื่อทั้งหมด? / Clear all entries?',
+      alertNotConn:      'ยังไม่ได้เชื่อมต่อ Sheet\nNot connected to a sheet yet.',
+      alertAllSynced:    'ทุกรายการซิงค์แล้ว!\nAll entries are already synced!',
+    },
+    en: {
+      heroWelcome:       'Welcome to',
+      heroTitle:         'Registration',
+      heroSub:           'ลงทะเบียน',
+      btnStart:          'GET STARTED →',
+      logoTop:           'Welcome',
+      logoMain:          'Registration',
+      formCardTitle:     '✏️  Enter Details',
+      sectionName:       'Name',
+      labelEn:           'Full Name (English)',
+      placeholderEn:     'e.g. Somchai Jaidee',
+      labelTh:           'Full Name (Thai)',
+      placeholderTh:     'e.g. สมชาย ใจดี',
+      btnRegister:       'REGISTER →',
+      btnListLabel:      'List',
+      successTitle:      "You're all set!",
+      successSub:        'Registration complete.',
+      sheetBadgeText:    'Saved to Google Sheet',
+      btnNext:           'NEXT PERSON →',
+      listTitle:         '📋  All Registrants',
+      listEmptyMain:     'No registrants yet.',
+      listEmptySub:      'กรอกข้อมูลในหน้าแบบฟอร์ม',
+      thTh:              'Name (TH)',
+      thEn:              'Name (EN)',
+      thSheet:           'Sheet',
+      btnExport:         '⬇ Export CSV',
+      btnRetry:          '🔄 Retry Failed',
+      btnPrint:          '🖨 Print',
+      btnClear:          '🗑 Clear All',
+      btnBackForm:       '✏️ Register',
+      statusConnected:   '📊 Connected to Google Sheet',
+      monitorCountLabel: 'Registrants',
+      monitorWaiting:    'Waiting for registrations…',
+      monitorWaitingSub: 'รอผู้ลงทะเบียน',
+      alertNoName:       'Please enter a name.',
+      alertRemove:       'Remove this entry?',
+      alertClearAll:     'Clear all entries?',
+      alertNotConn:      'Not connected to a sheet yet.',
+      alertAllSynced:    'All entries are already synced!',
+    }
+  };
+
+  let currentLang = localStorage.getItem('ui_lang') || 'th';
+
+  function pickLang(lang) {
+    setLang(lang);
+    // Animate out then show landing
+    const card = document.getElementById('screenLangPick');
+    card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+    card.style.opacity    = '0';
+    card.style.transform  = 'scale(1.04)';
+    setTimeout(() => {
+      card.style.transition = '';
+      card.style.opacity    = '';
+      card.style.transform  = '';
+      showScreen('screenLanding');
+    }, 340);
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('ui_lang', lang);
+    applyLang();
+  }
+
+  function applyLang() {
+    const tx = T[currentLang];
+
+    // Update all lang buttons
+    ['form','list'].forEach(prefix => {
+      const btnTh = document.getElementById(prefix + 'LangTh');
+      const btnEn = document.getElementById(prefix + 'LangEn');
+      if (btnTh) btnTh.classList.toggle('active', currentLang === 'th');
+      if (btnEn) btnEn.classList.toggle('active', currentLang === 'en');
+    });
+
+    // Landing
+    setText('heroWelcome',       tx.heroWelcome);
+    setText('heroTitle',         tx.heroTitle);
+    setText('heroSub',           tx.heroSub);
+    setText('btnStart',          tx.btnStart);
+
+    // Form header / logo
+    ['form','list','monitor'].forEach(prefix => {
+      setText(prefix + 'LogoTop',  tx.logoTop);
+      setText(prefix + 'LogoMain', tx.logoMain);
+    });
+
+    // Form body
+    setText('formCardTitle',     tx.formCardTitle);
+    setText('sectionName',       tx.sectionName);
+
+    // Label includes <span class="req">*</span> — rebuild safely
+    const lEn = document.getElementById('labelEn');
+    if (lEn) lEn.innerHTML = tx.labelEn + ' <span class="req">*</span>';
+    const lTh = document.getElementById('labelTh');
+    if (lTh) lTh.innerHTML = tx.labelTh + ' <span class="req">*</span>';
+
+    const inEn = document.getElementById('nameEn');
+    if (inEn) inEn.placeholder = tx.placeholderEn;
+    const inTh = document.getElementById('nameTh');
+    if (inTh) inTh.placeholder = tx.placeholderTh;
+
+    setText('btnRegister',       tx.btnRegister);
+    setText('btnListLabel',      tx.btnListLabel);
+
+    // Status bar
+    setText('statusText',        tx.statusConnected);
+
+    // Success overlay
+    setText('successTitle',      tx.successTitle);
+    setText('successSub',        tx.successSub);
+    setText('sheetBadgeText',    tx.sheetBadgeText);
+    setText('btnNext',           tx.btnNext);
+
+    // List screen
+    setText('listTitle',         tx.listTitle);
+    setText('listEmptyMain',     tx.listEmptyMain);
+    setText('listEmptySub',      tx.listEmptySub);
+    setText('thTh',              tx.thTh);
+    setText('thEn',              tx.thEn);
+    setText('thSheet',           tx.thSheet);
+    setText('btnExport',         tx.btnExport);
+    setText('btnRetry',          tx.btnRetry);
+    setText('btnPrint',          tx.btnPrint);
+    setText('btnClear',          tx.btnClear);
+    setText('btnBackForm',       tx.btnBackForm);
+
+    // Monitor
+    setText('monitorCountLabel', tx.monitorCountLabel);
+
+    // html lang attribute
+    document.documentElement.lang = currentLang === 'th' ? 'th' : 'en';
+  }
+
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  /* ═══ INIT ═══ */
+  applyLang();
+  updateHeader();
+
+  function onGetStarted() {
+    showScreen('screenForm');
+  }
+
+  /* ═══ SCREENS ═══ */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'screenList') renderList();
+    updateHeader();
+    window.scrollTo(0, 0);
+  }
+
+  /* ═══ REGISTER ═══ */
+  async function register() {
+    const en = document.getElementById('nameEn').value.trim();
+    const th = document.getElementById('nameTh').value.trim();
+    if (!en && !th) { alert(T[currentLang].alertNoName); return; }
+
+    const entry = {
+      en, th,
+      time: new Date().toLocaleTimeString('th-TH'),
+      date: new Date().toLocaleDateString('th-TH'),
+      synced: false
+    };
+
+    registrants.push(entry);
+    localStorage.setItem('reg_data', JSON.stringify(registrants));
+    updateHeader();
+
+    document.getElementById('nameEn').value = '';
+    document.getElementById('nameTh').value = '';
+
+    showSuccess(th, en);
+
+    // Send to sheet (non-blocking)
+    const idx = registrants.length - 1;
+    sendToSheet(entry).then(ok => {
+      registrants[idx].synced = ok;
+      localStorage.setItem('reg_data', JSON.stringify(registrants));
+      if (ok) document.getElementById('sheetBadge').style.display = 'inline-flex';
+    });
+  }
+
+  async function sendToSheet(entry) {
+    try {
+      const res = await fetch(sheetUrl, {
+        method:  'POST',
+        body:    JSON.stringify({ th: entry.th, en: entry.en, time: entry.time, date: entry.date }),
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      const json = await res.json();
+      return json.status === 'ok';
+    } catch(e) {
+      console.warn('Sheet sync failed:', e);
+      return false;
+    }
+  }
+
+  async function retryFailed() {
+    const failed = registrants.filter(r => !r.synced);
+    if (failed.length === 0) { alert(T[currentLang].alertAllSynced); return; }
+    for (const r of registrants) {
+      if (!r.synced) r.synced = await sendToSheet(r);
+    }
+    localStorage.setItem('reg_data', JSON.stringify(registrants));
+    renderList();
+    const n = registrants.filter(r=>r.synced).length;
+    alert(`Synced ${n} / ${registrants.length}`);
+  }
+
+  /* ═══ SUCCESS ═══ */
+  function showSuccess(th, en) {
+    document.getElementById('successNameTh').textContent = th || en;
+    document.getElementById('successNameEn').textContent = (th && en) ? en : '';
+    document.getElementById('sheetBadge').style.display = 'none';
+    const overlay = document.getElementById('successOverlay');
+    overlay.classList.add('show');
+
+    const bar = document.getElementById('successBar');
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      bar.style.transition = `width ${AUTO_MS}ms linear`;
+      bar.style.width = '100%';
+    }));
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(dismissSuccess, AUTO_MS);
+  }
+
+  function dismissSuccess() {
+    clearTimeout(autoTimer);
+    document.getElementById('successOverlay').classList.remove('show');
+    document.getElementById('successBar').style.width = '0%';
+    const en = document.getElementById('nameEn');
+    if (en) en.focus();
+  }
+
+  /* ═══ LIST ═══ */
+  function updateHeader() {
+    const el = document.getElementById('headerCount');
+    if (el) el.textContent = registrants.length;
+  }
+
+  function renderList() {
+    const body   = document.getElementById('listBody');
+    const table  = document.getElementById('listTable');
+    const empty  = document.getElementById('listEmpty');
+    const action = document.getElementById('listActions');
+    const count  = document.getElementById('listCount');
+    if (!body) return;
+
+    count.textContent = registrants.length;
+    body.innerHTML = '';
+
+    if (registrants.length === 0) {
+      table.style.display = 'none'; empty.style.display = 'block'; action.style.display = 'none'; return;
+    }
+    empty.style.display = 'none'; table.style.display = 'table'; action.style.display = 'flex';
+
+    registrants.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      const syncIcon = r.synced ? '✅' : (sheetUrl ? '⏳' : '—');
+      tr.innerHTML = `
+        <td class="num">${i + 1}</td>
+        <td>${r.th || '—'}</td>
+        <td>${r.en || '—'}</td>
+        <td class="status-cell" title="${r.synced ? 'Saved to sheet' : 'Not synced'}">${syncIcon}</td>
+        <td><button class="btn-del" onclick="removeEntry(${i})">✕</button></td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  function removeEntry(i) {
+    if (confirm(T[currentLang].alertRemove)) {
+      registrants.splice(i, 1);
+      localStorage.setItem('reg_data', JSON.stringify(registrants));
+      renderList(); updateHeader();
+    }
+  }
+
+  function clearAll() {
+    if (confirm(T[currentLang].alertClearAll)) {
+      registrants = [];
+      localStorage.setItem('reg_data', JSON.stringify(registrants));
+      renderList(); updateHeader();
+    }
+  }
+
+  function buildCSV() {
+    const rows = [['#','ชื่อ (ไทย)','Name (EN)','Time','Date','Synced']];
+    registrants.forEach((r,i) => rows.push([i+1, r.th||'', r.en||'', r.time||'', r.date||'', r.synced?'yes':'no']));
+    return rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  }
+
+  function exportCSV() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿'+buildCSV()], {type:'text/csv;charset=utf-8;'}));
+    a.download = 'registrants.csv';
+    a.click();
+  }
+
+  /* ═══ KEYBOARD ═══ */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.getElementById('successOverlay').classList.contains('show')) { dismissSuccess(); return; }
+      const active = document.querySelector('.screen.active');
+      if (active?.id === 'screenForm') register();
+    }
+    if (e.key === 'Escape') dismissSuccess();
+  });
+
+  /* ═══ MONITOR SCALING ═══ */
+  function scaleMonitor() {
+    const el = document.getElementById('screenMonitor');
+    if (!el) return;
+    const scale = window.innerWidth / 1920;
+    el.style.transform = `scale(${scale})`;
+    el.style.height = (1080 / scale) + 'px';
+    document.body.style.height = el.classList.contains('active')
+      ? Math.max(1080 * scale, window.innerHeight) + 'px' : '';
+  }
+  window.addEventListener('resize', scaleMonitor);
+  scaleMonitor();
+
+  /* ═══ MONITOR ═══ */
+  let monitorInterval = null;
+  let newCardTimers   = [];
+
+  function openMonitor() {
+    showScreen('screenMonitor');
+    scaleMonitor();
+    startMonitor();
+  }
+
+  function closeMonitor() {
+    stopMonitor();
+    document.body.style.height = '';
+    showScreen('screenForm');
+  }
+
+  function startMonitor() {
+    renderMonitor(false);
+    monitorInterval = setInterval(() => {
+      const fresh = JSON.parse(localStorage.getItem('reg_data') || '[]');
+      if (fresh.length !== registrants.length) {
+        const isNew = fresh.length > registrants.length;
+        registrants = fresh;
+        updateHeader();
+        renderMonitor(isNew);
+      }
+    }, 1500);
+  }
+
+  function stopMonitor() {
+    clearInterval(monitorInterval);
+    newCardTimers.forEach(clearTimeout);
+    newCardTimers = [];
+  }
+
+  window.addEventListener('storage', e => {
+    if (e.key === 'reg_data' && document.getElementById('screenMonitor').classList.contains('active')) {
+      const fresh = JSON.parse(e.newValue || '[]');
+      const isNew = fresh.length > registrants.length;
+      registrants = fresh;
+      updateHeader();
+      renderMonitor(isNew);
+    }
+  });
+
+  function renderMonitor(animateLatest) {
+    const body  = document.getElementById('monitorBody');
+    const count = document.getElementById('monitorCount');
+    if (!body) return;
+
+    count.textContent = registrants.length;
+    body.innerHTML = '';
+
+    if (registrants.length === 0) {
+      const tx = T[currentLang];
+      body.innerHTML = `
+        <div class="monitor-empty">
+          <div class="monitor-empty-icon">⛳</div>
+          <div class="monitor-empty-text">${tx.monitorWaiting}<br/><small style="opacity:.6">${tx.monitorWaitingSub}</small></div>
+        </div>`;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'monitor-grid';
+
+    const all = [...registrants].reverse();
+    all.forEach((r, i) => {
+      const card = document.createElement('div');
+      const isLatest = i === 0 && animateLatest;
+      card.className = 'monitor-card' + (isLatest ? ' is-new' : '');
+      card.style.animationDelay = animateLatest ? `${Math.min(i * 35, 300)}ms` : '0ms';
+      if (!animateLatest) card.style.animation = 'none';
+      const displayName = r.th || r.en || '—';
+      const initial = displayName.charAt(0).toUpperCase();
+      card.innerHTML = `
+        <div class="card-num">#${registrants.length - i}</div>
+        <div class="card-avatar">${initial}</div>
+        <div class="card-name-th">${r.th || r.en || '—'}</div>
+        ${(r.th && r.en) ? `<div class="card-name-en">${r.en}</div>` : ''}
+      `;
+      grid.appendChild(card);
+
+      if (isLatest) {
+        const t = setTimeout(() => card.classList.remove('is-new'), 8000);
+        newCardTimers.push(t);
+      }
+    });
+
+    body.appendChild(grid);
+  }
+</script>
+</body>
+</html>
