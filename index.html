@@ -1314,4 +1314,99 @@
   function openMonitor() {
     // Use showScreen base logic without overriding polling
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('screenMonitor').classList.add
+    document.getElementById('screenMonitor').classList.add('active');
+    scaleMonitor();
+    startMonitor();
+    updateHeader();
+    window.scrollTo(0, 0);
+  }
+
+  function closeMonitor() {
+    stopMonitor();
+    stopLivePolling();
+    document.body.style.height = '';
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screenForm').classList.add('active');
+    updateHeader();
+    window.scrollTo(0, 0);
+  }
+
+  function startMonitor() {
+    renderMonitor(false);
+    startLivePolling();
+    monitorInterval = setInterval(() => {
+      const fresh = JSON.parse(localStorage.getItem('reg_data') || '[]');
+      if (fresh.length !== registrants.length) {
+        const isNew = fresh.length > registrants.length;
+        registrants = fresh;
+        updateHeader();
+        renderMonitor(isNew);
+      }
+    }, 1000);
+  }
+
+  function stopMonitor() {
+    clearInterval(monitorInterval);
+    newCardTimers.forEach(clearTimeout);
+    newCardTimers = [];
+  }
+
+  window.addEventListener('storage', e => {
+    if (e.key === 'reg_data' && document.getElementById('screenMonitor').classList.contains('active')) {
+      const fresh = JSON.parse(e.newValue || '[]');
+      const isNew = fresh.length > registrants.length;
+      registrants = fresh;
+      updateHeader();
+      renderMonitor(isNew);
+    }
+  });
+
+  function renderMonitor(animateLatest) {
+    const body  = document.getElementById('monitorBody');
+    const count = document.getElementById('monitorCount');
+    if (!body) return;
+
+    count.textContent = registrants.length;
+    body.innerHTML = '';
+
+    if (registrants.length === 0) {
+      const tx = T[currentLang];
+      body.innerHTML = `
+        <div class="monitor-empty">
+          <div class="monitor-empty-icon">⛳</div>
+          <div class="monitor-empty-text">${tx.monitorWaiting}<br/><small style="opacity:.6">${tx.monitorWaitingSub}</small></div>
+        </div>`;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'monitor-grid';
+
+    const all = [...registrants].reverse();
+    all.forEach((r, i) => {
+      const card = document.createElement('div');
+      const isLatest = i === 0 && animateLatest;
+      card.className = 'monitor-card' + (isLatest ? ' is-new' : '');
+      card.style.animationDelay = animateLatest ? `${Math.min(i * 35, 300)}ms` : '0ms';
+      if (!animateLatest) card.style.animation = 'none';
+      const displayName = r.th || r.en || '—';
+      const initial = displayName.charAt(0).toUpperCase();
+      card.innerHTML = `
+        <div class="card-num">#${registrants.length - i}</div>
+        <div class="card-avatar">${initial}</div>
+        <div class="card-name-th">${r.th || r.en || '—'}</div>
+        ${(r.th && r.en) ? `<div class="card-name-en">${r.en}</div>` : ''}
+      `;
+      grid.appendChild(card);
+
+      if (isLatest) {
+        const t = setTimeout(() => card.classList.remove('is-new'), 8000);
+        newCardTimers.push(t);
+      }
+    });
+
+    body.appendChild(grid);
+  }
+</script>
+</body>
+</html>(
