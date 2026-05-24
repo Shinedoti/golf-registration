@@ -1050,14 +1050,7 @@
     showScreen('screenForm');
   }
 
-  /* ═══ SCREENS ═══ */
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if (id === 'screenList') renderList();
-    updateHeader();
-    window.scrollTo(0, 0);
-  }
+  /* ═══ SCREENS ═══ (defined below with polling logic) */
 
   /* ═══ REGISTER ═══ */
   async function register() {
@@ -1232,97 +1225,93 @@
   window.addEventListener('resize', scaleMonitor);
   scaleMonitor();
 
+  /* ═══ REAL-TIME SERVER POLLING ═══ */
+  let liveInterval      = null;
+  let lastServerCount   = -1;
+  let liveStatus        = 'idle'; // 'idle' | 'ok' | 'error'
+
+  async function fetchFromSheet() {
+    try {
+      const res  = await fetch(SHEET_URL + '?action=list&t=' + Date.now());
+      const json = await res.json();
+      if (json.status === 'ok' && Array.isArray(json.data)) return json.data;
+      return null;
+    } catch(e) {
+      return null;
+    }
+  }
+
+  async function syncFromServer() {
+    const data = await fetchFromSheet();
+    if (!data) {
+      if (liveStatus !== 'error') { liveStatus = 'error'; updateLiveDot(); }
+      return;
+    }
+    liveStatus = 'ok';
+    updateLiveDot();
+
+    if (data.length === lastServerCount) return;  // nothing changed
+    const wasMore = data.length > registrants.length;
+    lastServerCount = data.length;
+
+    // Merge — server is the source of truth for cross-device names
+    const merged = data.map(r => ({
+      en: r.en || '', th: r.th || '',
+      time: r.time || '', date: r.date || '',
+      synced: true
+    }));
+    // Keep any local entries not yet sent (optimistic: appear immediately)
+    registrants.forEach(r => {
+      if (!r.synced) merged.push(r);
+    });
+    registrants = merged;
+    localStorage.setItem('reg_data', JSON.stringify(registrants));
+    updateHeader();
+
+    const monActive  = document.getElementById('screenMonitor').classList.contains('active');
+    const listActive = document.getElementById('screenList').classList.contains('active');
+    if (monActive)  renderMonitor(wasMore);
+    if (listActive) renderList();
+  }
+
+  function startLivePolling() {
+    if (liveInterval) return;
+    syncFromServer();
+    liveInterval = setInterval(syncFromServer, 3000);
+  }
+
+  function stopLivePolling() {
+    clearInterval(liveInterval);
+    liveInterval    = null;
+    lastServerCount = -1;
+    liveStatus      = 'idle';
+  }
+
+  function updateLiveDot() {
+    // Colour the LIVE dot: green=ok, yellow=error, default=red pulse
+    const dot = document.querySelector('.live-dot');
+    if (!dot) return;
+    if (liveStatus === 'ok')    dot.style.background = '#3a9e6a';
+    else if (liveStatus==='error') dot.style.background = '#e8a800';
+    else                           dot.style.background = '#e82020';
+  }
+
+  /* Also sync list screen when it becomes visible */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'screenList')    { renderList();  startLivePolling(); }
+    if (id === 'screenMonitor') { /* handled in openMonitor */ }
+    if (id !== 'screenList' && id !== 'screenMonitor') stopLivePolling();
+    updateHeader();
+    window.scrollTo(0, 0);
+  }
+
   /* ═══ MONITOR ═══ */
   let monitorInterval = null;
   let newCardTimers   = [];
 
   function openMonitor() {
-    showScreen('screenMonitor');
-    scaleMonitor();
-    startMonitor();
-  }
-
-  function closeMonitor() {
-    stopMonitor();
-    document.body.style.height = '';
-    showScreen('screenForm');
-  }
-
-  function startMonitor() {
-    renderMonitor(false);
-    monitorInterval = setInterval(() => {
-      const fresh = JSON.parse(localStorage.getItem('reg_data') || '[]');
-      if (fresh.length !== registrants.length) {
-        const isNew = fresh.length > registrants.length;
-        registrants = fresh;
-        updateHeader();
-        renderMonitor(isNew);
-      }
-    }, 1500);
-  }
-
-  function stopMonitor() {
-    clearInterval(monitorInterval);
-    newCardTimers.forEach(clearTimeout);
-    newCardTimers = [];
-  }
-
-  window.addEventListener('storage', e => {
-    if (e.key === 'reg_data' && document.getElementById('screenMonitor').classList.contains('active')) {
-      const fresh = JSON.parse(e.newValue || '[]');
-      const isNew = fresh.length > registrants.length;
-      registrants = fresh;
-      updateHeader();
-      renderMonitor(isNew);
-    }
-  });
-
-  function renderMonitor(animateLatest) {
-    const body  = document.getElementById('monitorBody');
-    const count = document.getElementById('monitorCount');
-    if (!body) return;
-
-    count.textContent = registrants.length;
-    body.innerHTML = '';
-
-    if (registrants.length === 0) {
-      const tx = T[currentLang];
-      body.innerHTML = `
-        <div class="monitor-empty">
-          <div class="monitor-empty-icon">⛳</div>
-          <div class="monitor-empty-text">${tx.monitorWaiting}<br/><small style="opacity:.6">${tx.monitorWaitingSub}</small></div>
-        </div>`;
-      return;
-    }
-
-    const grid = document.createElement('div');
-    grid.className = 'monitor-grid';
-
-    const all = [...registrants].reverse();
-    all.forEach((r, i) => {
-      const card = document.createElement('div');
-      const isLatest = i === 0 && animateLatest;
-      card.className = 'monitor-card' + (isLatest ? ' is-new' : '');
-      card.style.animationDelay = animateLatest ? `${Math.min(i * 35, 300)}ms` : '0ms';
-      if (!animateLatest) card.style.animation = 'none';
-      const displayName = r.th || r.en || '—';
-      const initial = displayName.charAt(0).toUpperCase();
-      card.innerHTML = `
-        <div class="card-num">#${registrants.length - i}</div>
-        <div class="card-avatar">${initial}</div>
-        <div class="card-name-th">${r.th || r.en || '—'}</div>
-        ${(r.th && r.en) ? `<div class="card-name-en">${r.en}</div>` : ''}
-      `;
-      grid.appendChild(card);
-
-      if (isLatest) {
-        const t = setTimeout(() => card.classList.remove('is-new'), 8000);
-        newCardTimers.push(t);
-      }
-    });
-
-    body.appendChild(grid);
-  }
-</script>
-</body>
-</html>
+    // Use showScreen base logic without overriding polling
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screenMonitor').classList.add
